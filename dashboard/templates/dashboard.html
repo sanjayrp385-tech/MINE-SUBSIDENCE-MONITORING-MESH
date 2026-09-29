@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mine Subsidence Monitoring</title>
+<style>
+body{margin:0;background:#0d141b;color:#eee;font-family:Arial}
+header{text-align:center;padding:22px;background:#17212b;border-bottom:1px solid #33414e}
+header h1{margin:0} header p{color:#9eabb7}
+.summary,.nodes{max-width:1200px;margin:auto;padding:20px;display:grid;gap:16px}
+.summary{grid-template-columns:repeat(3,1fr)}
+.card,.node{background:#17212b;border:1px solid #33414e;border-radius:12px;padding:18px}
+.card{text-align:center}.label{color:#9eabb7;font-size:12px}.big{font-size:28px;font-weight:bold;margin-top:6px}
+.nodes{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.node h2{margin-top:0}.metric{margin:12px 0}.value{font-size:24px;font-weight:bold}
+.status{text-align:center;padding:10px;border-radius:7px;font-weight:bold}
+.normal{background:#155c39}.warning{background:#775d12}.high{background:#752525}.offline{background:#454c53}
+footer{text-align:center;color:#788590;padding:20px;font-size:12px}
+</style>
+</head>
+<body>
+<header><h1>⛏ MINE SUBSIDENCE MONITORING</h1><p>Wireless Surface Sensor Mesh • Raspberry Pi Edge Gateway</p></header>
+<section class="summary">
+<div class="card"><div class="label">SYSTEM</div><div id="sys" class="big">ONLINE</div></div>
+<div class="card"><div class="label">ACTIVE NODES</div><div id="count" class="big">0</div></div>
+<div class="card"><div class="label">NETWORK</div><div class="big">MESH</div></div>
+</section>
+<section id="nodes" class="nodes"></section>
+<footer>Competition prototype. Thresholds require field calibration before real deployment.</footer>
+<script>
+function update(){
+ fetch("/api/data").then(r=>r.json()).then(data=>{
+  let box=document.getElementById("nodes"),active=0; box.innerHTML="";
+  Object.values(data).sort((a,b)=>a.node-b.node).forEach(n=>{
+   if(n.online)active++;
+   let s=n.online?n.risk:"OFFLINE";
+   let c=document.createElement("div"); c.className="node";
+   c.innerHTML=`<h2>NODE ${n.node}</h2>
+   <div class="metric"><div class="label">TILT X</div><div class="value">${n.tilt_x}°</div></div>
+   <div class="metric"><div class="label">TILT Y</div><div class="value">${n.tilt_y}°</div></div>
+   <div class="metric"><div class="label">VIBRATION</div><div class="value">${n.vibration}</div></div>
+   <div class="status ${s.toLowerCase()}">${s}</div>`;
+   box.appendChild(c);
+  });
+  document.getElementById("count").innerText=active;
+ }).catch(()=>document.getElementById("sys").innerText="OFFLINE");
+}
+update();setInterval(update,1000);
+</script>
+</body>
+</html>
